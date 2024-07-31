@@ -27,8 +27,6 @@ if 'file_content' not in st.session_state:
     st.session_state.file_content = ""
 if 'file_uploaded' not in st.session_state:
     st.session_state.file_uploaded = False
-if 'last_file_question' not in st.session_state:
-    st.session_state.last_file_question = ""
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -55,18 +53,18 @@ def get_claude_response(prompt, context=""):
         return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
 def on_general_question_submit():
-    if st.session_state.user_question:
-        response = get_claude_response(st.session_state.user_question)
-        st.session_state.chat_history.append((st.session_state.user_question, response))
+    user_question = st.session_state.user_question
+    if user_question:
+        response = get_claude_response(user_question)
+        st.session_state.chat_history.append((user_question, response))
         st.session_state.user_question = ""
 
 def on_file_question_submit():
-    if st.session_state.file_question and st.session_state.file_content:
+    file_question = st.session_state.file_question
+    if file_question and st.session_state.file_content:
         context = f"Contexto del archivo PDF:\n\n{st.session_state.file_content[:4000]}\n\n"
-        response = get_claude_response(st.session_state.file_question, context=context)
-        st.session_state.file_chat_history.append((st.session_state.file_question, response))
-        st.session_state.last_file_question = st.session_state.file_question
-        st.session_state.file_question = ""
+        response = get_claude_response(file_question, context=context)
+        st.session_state.file_chat_history.append((file_question, response))
 
 # Crear pestañas
 tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
@@ -107,8 +105,6 @@ with tab2:
 
     # Área para preguntas sobre el archivo
     if st.session_state.file_uploaded:
-        st.write(f"Contenido del PDF (primeros 500 caracteres): {st.session_state.file_content[:500]}")
-        
         # Mostrar el historial de chat del archivo
         for q, a in st.session_state.file_chat_history:
             st.subheader("Pregunta sobre el archivo:")
@@ -118,15 +114,10 @@ with tab2:
             st.markdown("---")
 
         # Área para nueva pregunta sobre el archivo
-        file_question = st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100, value=st.session_state.last_file_question)
+        st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
         if st.button("Enviar Pregunta sobre el PDF", key="file_submit"):
-            st.session_state.file_question = file_question
             on_file_question_submit()
+            st.rerun()
 
     else:
         st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
-
-# Depuración: mostrar el contenido del archivo PDF
-if st.session_state.file_uploaded:
-    st.write("Contenido del archivo PDF guardado:")
-    st.write(st.session_state.file_content[:1000])  # Mostrar los primeros 1000 caracteres
