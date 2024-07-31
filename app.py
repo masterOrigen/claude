@@ -30,6 +30,8 @@ if 'user_question' not in st.session_state:
     st.session_state.user_question = ""
 if 'file_question' not in st.session_state:
     st.session_state.file_question = ""
+if 'should_clear_file_question' not in st.session_state:
+    st.session_state.should_clear_file_question = False
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -83,8 +85,8 @@ def on_file_question_submit():
             # Agregar la nueva pregunta y respuesta al historial
             st.session_state.file_chat_history.append((st.session_state.file_question, response))
             
-            # Limpiar el campo de entrada
-            st.session_state.file_question = ""
+            # Indicar que debemos limpiar el campo de entrada en la próxima renderización
+            st.session_state.should_clear_file_question = True
     except Exception as e:
         st.error(f"Error al procesar la pregunta sobre el archivo: {str(e)}")
         st.error(f"Traceback: {traceback.format_exc()}")
@@ -139,6 +141,11 @@ if uploaded_file is not None:
         st.subheader("Respuesta:")
         st.write(a)
         st.markdown("---")
+
+    # Si debemos limpiar la pregunta del archivo, lo hacemos aquí
+    if st.session_state.should_clear_file_question:
+        st.session_state.file_question = ""
+        st.session_state.should_clear_file_question = False
 
     st.text_area("Haga una nueva pregunta sobre el archivo:", key="file_question", height=100)
     if st.button("Enviar Pregunta sobre el Archivo", key="file_submit"):
