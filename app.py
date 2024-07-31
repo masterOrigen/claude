@@ -37,7 +37,7 @@ def get_claude_response(prompt, context=""):
                      "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
                      "Evita especulaciones y céntrate en hechos verificables.")
     
-    full_prompt = f"Contexto: {context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contexto proporcionado."
+    full_prompt = f"Contexto del archivo PDF:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo PDF proporcionado."
     
     try:
         message = client.messages.create(
@@ -92,7 +92,7 @@ with tab2:
 
     # Subida de archivos
     uploaded_file = st.file_uploader("Elija un archivo PDF", type=["pdf"])
-    if uploaded_file is not None and not st.session_state.file_uploaded:
+    if uploaded_file is not None:
         try:
             pdf_reader = PdfReader(io.BytesIO(uploaded_file.getvalue()))
             file_content = ""
@@ -118,6 +118,7 @@ with tab2:
             st.markdown("---")
 
         st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
-        st.button("Enviar Pregunta sobre el PDF", key="file_submit", on_click=on_file_question_submit)
+        if st.button("Enviar Pregunta sobre el PDF", key="file_submit"):
+            on_file_question_submit()
     else:
         st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
