@@ -5,12 +5,17 @@ from dotenv import load_dotenv
 import os
 from PyPDF2 import PdfReader
 import io
+import traceback
 
 # Cargar variables de entorno
 load_dotenv()
 
 # Configurar el cliente de Anthropic usando la API key del archivo .env
-client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+try:
+    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+except Exception as e:
+    st.error(f"Error al inicializar el cliente de Anthropic: {str(e)}")
+    st.stop()
 
 st.title("Aplicación de Preguntas y Respuestas con Claude 3.5 Sonnet")
 
@@ -50,30 +55,39 @@ def get_claude_response(prompt, context=""):
         return "Lo siento, ha ocurrido un error al procesar tu pregunta. Por favor, inténtalo de nuevo más tarde."
     except Exception as e:
         st.error(f"Error inesperado: {str(e)}")
+        st.error(f"Traceback: {traceback.format_exc()}")
         return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
 def on_general_question_submit():
-    if st.session_state.user_question:
-        response = get_claude_response(st.session_state.user_question, context=st.session_state.conversation_context)
-        
-        # Actualizar el contexto de la conversación
-        st.session_state.conversation_context += f"\nPregunta: {st.session_state.user_question}\nRespuesta: {response}\n"
-        
-        # Agregar la nueva pregunta y respuesta al historial
-        st.session_state.chat_history.append((st.session_state.user_question, response))
-        
-        # Limpiar el campo de entrada
-        st.session_state.user_question = ""
+    try:
+        if st.session_state.user_question:
+            response = get_claude_response(st.session_state.user_question, context=st.session_state.conversation_context)
+            
+            # Actualizar el contexto de la conversación
+            st.session_state.conversation_context += f"\nPregunta: {st.session_state.user_question}\nRespuesta: {response}\n"
+            
+            # Agregar la nueva pregunta y respuesta al historial
+            st.session_state.chat_history.append((st.session_state.user_question, response))
+            
+            # Limpiar el campo de entrada
+            st.session_state.user_question = ""
+    except Exception as e:
+        st.error(f"Error al procesar la pregunta general: {str(e)}")
+        st.error(f"Traceback: {traceback.format_exc()}")
 
 def on_file_question_submit():
-    if st.session_state.file_question and 'file_content' in st.session_state:
-        response = get_claude_response(st.session_state.file_question, context=st.session_state.file_content[:4000])
-        
-        # Agregar la nueva pregunta y respuesta al historial
-        st.session_state.file_chat_history.append((st.session_state.file_question, response))
-        
-        # Limpiar el campo de entrada
-        st.session_state.file_question = ""
+    try:
+        if st.session_state.file_question and 'file_content' in st.session_state:
+            response = get_claude_response(st.session_state.file_question, context=st.session_state.file_content[:4000])
+            
+            # Agregar la nueva pregunta y respuesta al historial
+            st.session_state.file_chat_history.append((st.session_state.file_question, response))
+            
+            # Limpiar el campo de entrada
+            st.session_state.file_question = ""
+    except Exception as e:
+        st.error(f"Error al procesar la pregunta sobre el archivo: {str(e)}")
+        st.error(f"Traceback: {traceback.format_exc()}")
 
 # Área de preguntas generales
 st.header("Preguntas Generales")
@@ -113,6 +127,7 @@ if uploaded_file is not None:
         st.success("Archivo subido exitosamente.")
     except Exception as e:
         st.error(f"Error al leer el archivo: {str(e)}")
+        st.error(f"Traceback: {traceback.format_exc()}")
 
     # Área para preguntas sobre el archivo
     st.header("Preguntas sobre el Archivo")
