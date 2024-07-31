@@ -21,6 +21,10 @@ if 'file_chat_history' not in st.session_state:
     st.session_state.file_chat_history = []
 if 'conversation_context' not in st.session_state:
     st.session_state.conversation_context = ""
+if 'user_question' not in st.session_state:
+    st.session_state.user_question = ""
+if 'file_question' not in st.session_state:
+    st.session_state.file_question = ""
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -48,6 +52,29 @@ def get_claude_response(prompt, context=""):
         st.error(f"Error inesperado: {str(e)}")
         return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
+def on_general_question_submit():
+    if st.session_state.user_question:
+        response = get_claude_response(st.session_state.user_question, context=st.session_state.conversation_context)
+        
+        # Actualizar el contexto de la conversación
+        st.session_state.conversation_context += f"\nPregunta: {st.session_state.user_question}\nRespuesta: {response}\n"
+        
+        # Agregar la nueva pregunta y respuesta al historial
+        st.session_state.chat_history.append((st.session_state.user_question, response))
+        
+        # Limpiar el campo de entrada
+        st.session_state.user_question = ""
+
+def on_file_question_submit():
+    if st.session_state.file_question and 'file_content' in st.session_state:
+        response = get_claude_response(st.session_state.file_question, context=st.session_state.file_content[:4000])
+        
+        # Agregar la nueva pregunta y respuesta al historial
+        st.session_state.file_chat_history.append((st.session_state.file_question, response))
+        
+        # Limpiar el campo de entrada
+        st.session_state.file_question = ""
+
 # Área de preguntas generales
 st.header("Preguntas Generales")
 
@@ -58,19 +85,8 @@ for q, a in st.session_state.chat_history:
     st.markdown("---")
 
 # Área para nueva pregunta general
-user_question = st.text_input("Haga su nueva pregunta aquí:")
-if st.button("Enviar Pregunta"):
-    if user_question:
-        response = get_claude_response(user_question, context=st.session_state.conversation_context)
-        
-        # Actualizar el contexto de la conversación
-        st.session_state.conversation_context += f"\nPregunta: {user_question}\nRespuesta: {response}\n"
-        
-        # Agregar la nueva pregunta y respuesta al historial
-        st.session_state.chat_history.append((user_question, response))
-        
-        # Limpiar el campo de entrada y forzar la actualización de la interfaz
-        st.experimental_rerun()
+st.text_input("Haga su nueva pregunta aquí:", key="user_question", on_change=on_general_question_submit)
+st.button("Enviar Pregunta", on_click=on_general_question_submit)
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -104,19 +120,5 @@ if uploaded_file is not None:
         st.text_area("Respuesta:", value=a, height=200, disabled=True)
         st.markdown("---")
 
-    file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
-    if st.button("Enviar Pregunta sobre el Archivo"):
-        if file_question:
-            if 'file_content' in st.session_state:
-                try:
-                    response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
-                    
-                    # Agregar la nueva pregunta y respuesta al historial
-                    st.session_state.file_chat_history.append((file_question, response))
-                    
-                    # Limpiar el campo de entrada y forzar la actualización de la interfaz
-                    st.experimental_rerun()
-                except Exception as e:
-                    st.error(f"Error al procesar la pregunta: {str(e)}")
-            else:
-                st.error("Por favor, suba un archivo antes de hacer preguntas sobre él.")
+    st.text_input("Haga una nueva pregunta sobre el archivo:", key="file_question", on_change=on_file_question_submit)
+    st.button("Enviar Pregunta sobre el Archivo", on_click=on_file_question_submit)
