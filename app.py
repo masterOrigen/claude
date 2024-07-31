@@ -28,16 +28,23 @@ def get_claude_response(prompt, context=""):
     
     full_prompt = f"Contexto: {context}\n\nPregunta del usuario: {prompt}"
     
-    message = client.messages.create(
-        model="claude-3-sonnet-20240229",
-        max_tokens=4096,
-        temperature=0,
-        system=system_prompt,
-        messages=[
-            {"role": "user", "content": full_prompt}
-        ]
-    )
-    return message.content[0].text
+    try:
+        message = client.messages.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens=2000,
+            temperature=0.2,
+            system=system_prompt,
+            messages=[
+                {"role": "user", "content": full_prompt}
+            ]
+        )
+        return message.content[0].text
+    except anthropic.APIError as e:
+        st.error(f"Error en la API de Anthropic: {str(e)}")
+        return "Lo siento, ha ocurrido un error al procesar tu pregunta. Por favor, inténtalo de nuevo más tarde."
+    except Exception as e:
+        st.error(f"Error inesperado: {str(e)}")
+        return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
 # Área de preguntas generales
 st.header("Preguntas Generales")
@@ -68,20 +75,23 @@ st.header("Subir Archivo")
 uploaded_file = st.file_uploader("Elija un archivo", type=["csv", "txt", "pdf"])
 if uploaded_file is not None:
     # Leer el archivo
-    if uploaded_file.type == "text/csv":
-        df = pd.read_csv(uploaded_file)
-        file_content = df.to_string()
-    elif uploaded_file.type == "text/plain":
-        file_content = uploaded_file.getvalue().decode("utf-8")
-    elif uploaded_file.type == "application/pdf":
-        pdf_reader = PdfReader(io.BytesIO(uploaded_file.getvalue()))
-        file_content = ""
-        for page in pdf_reader.pages:
-            file_content += page.extract_text() + "\n"
+    try:
+        if uploaded_file.type == "text/csv":
+            df = pd.read_csv(uploaded_file)
+            file_content = df.to_string()
+        elif uploaded_file.type == "text/plain":
+            file_content = uploaded_file.getvalue().decode("utf-8")
+        elif uploaded_file.type == "application/pdf":
+            pdf_reader = PdfReader(io.BytesIO(uploaded_file.getvalue()))
+            file_content = ""
+            for page in pdf_reader.pages:
+                file_content += page.extract_text() + "\n"
 
-    # Guardar el contenido del archivo en la sesión
-    st.session_state.file_content = file_content
-    st.success("Archivo subido exitosamente.")
+        # Guardar el contenido del archivo en la sesión
+        st.session_state.file_content = file_content
+        st.success("Archivo subido exitosamente.")
+    except Exception as e:
+        st.error(f"Error al leer el archivo: {str(e)}")
 
     # Área para preguntas sobre el archivo
     st.header("Preguntas sobre el Archivo")
@@ -90,14 +100,17 @@ if uploaded_file is not None:
     if st.button("Enviar Pregunta sobre el Archivo"):
         if file_question:
             if 'file_content' in st.session_state:
-                response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
-                
-                # Agregar la nueva pregunta y respuesta al historial
-                st.session_state.file_chat_history.append((file_question, response))
-                
-                # Mostrar la nueva respuesta
-                st.subheader("Respuesta:")
-                st.write(response)
+                try:
+                    response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
+                    
+                    # Agregar la nueva pregunta y respuesta al historial
+                    st.session_state.file_chat_history.append((file_question, response))
+                    
+                    # Mostrar la nueva respuesta
+                    st.subheader("Respuesta:")
+                    st.write(response)
+                except Exception as e:
+                    st.error(f"Error al procesar la pregunta: {str(e)}")
             else:
                 st.error("Por favor, suba un archivo antes de hacer preguntas sobre él.")
 
