@@ -65,7 +65,7 @@ if st.button("Enviar Pregunta"):
         st.session_state.chat_history.append((user_question, response))
         
         # Limpiar el campo de entrada
-        st.experimental_rerun()
+        st.rerun()
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -110,7 +110,7 @@ if uploaded_file is not None:
                     st.session_state.file_chat_history.append((file_question, response))
                     
                     # Limpiar el campo de entrada
-                    st.experimental_rerun()
+                    st.rerun()
                 except Exception as e:
                     st.error(f"Error al procesar la pregunta: {str(e)}")
             else:
