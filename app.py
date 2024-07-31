@@ -56,14 +56,14 @@ def on_general_question_submit():
     if st.session_state.user_question:
         response = get_claude_response(st.session_state.user_question)
         st.session_state.chat_history.append((st.session_state.user_question, response))
-        st.session_state.user_question = ""  # Esto limpiará el campo de entrada
+        st.session_state.user_question = ""
 
 def on_file_question_submit():
     if st.session_state.file_question and st.session_state.file_content:
         context = f"Contexto del archivo PDF:\n\n{st.session_state.file_content[:4000]}\n\n"
         response = get_claude_response(st.session_state.file_question, context=context)
         st.session_state.file_chat_history.append((st.session_state.file_question, response))
-        st.session_state.file_question = ""  # Esto limpiará el campo de entrada
+        st.session_state.file_question = ""
 
 # Crear pestañas
 tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
@@ -98,6 +98,7 @@ with tab2:
             st.session_state.file_content = file_content
             st.session_state.file_uploaded = True
             st.success("Archivo PDF subido exitosamente.")
+            st.write(f"Contenido del PDF (primeros 500 caracteres): {st.session_state.file_content[:500]}")
         except Exception as e:
             st.error(f"Error al leer el archivo PDF: {str(e)}")
             st.error(f"Traceback: {traceback.format_exc()}")
@@ -117,3 +118,8 @@ with tab2:
         st.button("Enviar Pregunta sobre el PDF", key="file_submit", on_click=on_file_question_submit)
     else:
         st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
+
+# Depuración: mostrar el contenido del archivo PDF
+if st.session_state.file_uploaded:
+    st.write("Contenido del archivo PDF guardado:")
+    st.write(st.session_state.file_content[:1000])  # Mostrar los primeros 1000 caracteres
