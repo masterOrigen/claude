@@ -37,7 +37,7 @@ def get_claude_response(prompt, context=""):
                      "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
                      "Evita especulaciones y céntrate en hechos verificables.")
     
-    full_prompt = f"Contexto: {context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contexto proporcionado."
+    full_prompt = f"Contexto del archivo:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo proporcionado."
     
     try:
         message = client.messages.create(
@@ -103,6 +103,8 @@ if uploaded_file is not None and not st.session_state.file_uploaded:
         st.session_state.file_content = file_content
         st.session_state.file_uploaded = True
         st.success("Archivo subido exitosamente.")
+        st.write("Primeras 500 caracteres del archivo:")
+        st.text(st.session_state.file_content[:500])
     except Exception as e:
         st.error(f"Error al leer el archivo: {str(e)}")
         st.error(f"Traceback: {traceback.format_exc()}")
