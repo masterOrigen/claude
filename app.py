@@ -30,6 +30,8 @@ if 'file_content' not in st.session_state:
     st.session_state.file_content = ""
 if 'file_uploaded' not in st.session_state:
     st.session_state.file_uploaded = False
+if 'new_file_response' not in st.session_state:
+    st.session_state.new_file_response = None
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -70,7 +72,7 @@ def on_file_question_submit():
     if file_question and st.session_state.file_content:
         response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
         st.session_state.file_chat_history.append((file_question, response))
-        st.experimental_rerun()
+        st.session_state.new_file_response = response
 
 # Crear pestañas
 tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
@@ -112,8 +114,12 @@ with tab2:
     # Área para preguntas sobre el archivo
     if st.session_state.file_uploaded:
         st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
-        if st.button("Enviar Pregunta sobre el PDF", key="file_submit"):
-            on_file_question_submit()
+        st.button("Enviar Pregunta sobre el PDF", key="file_submit", on_click=on_file_question_submit)
+
+        if st.session_state.new_file_response:
+            st.subheader("Nueva respuesta:")
+            st.write(st.session_state.new_file_response)
+            st.session_state.new_file_response = None
 
         for q, a in st.session_state.file_chat_history:
             st.subheader("Pregunta sobre el archivo:")
