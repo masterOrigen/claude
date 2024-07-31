@@ -48,7 +48,7 @@ if st.button("Enviar Pregunta"):
         st.text_area("Respuesta:", value=response, height=200, disabled=True)
         
         # Limpiar el campo de entrada
-        st.experimental_rerun()
+        st.rerun()
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -99,7 +99,4 @@ if uploaded_file is not None:
             st.text_area("Respuesta:", value=response, height=200, disabled=True)
             
             # Limpiar el campo de entrada
-            st.experimental_rerun()
-
-# Nota: Asegúrese de que su archivo .env contiene la clave API correcta:
-# ANTHROPIC_API_KEY=su_clave_api_aqui
+            st.rerun()
