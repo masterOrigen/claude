@@ -3,6 +3,8 @@ import anthropic
 import pandas as pd
 from dotenv import load_dotenv
 import os
+from PyPDF2 import PdfReader
+import io
 
 # Cargar variables de entorno
 load_dotenv()
@@ -29,7 +31,7 @@ def get_claude_response(prompt, context=""):
     message = client.messages.create(
         model="claude-3-sonnet-20240229",
         max_tokens=2000,
-        temperature=0.2,
+        temperature=0,
         system=system_prompt,
         messages=[
             {"role": "user", "content": full_prompt}
@@ -77,8 +79,15 @@ if uploaded_file is not None:
         st.write(file_content[:500])  # Mostrar los primeros 500 caracteres
     elif uploaded_file.type == "application/pdf":
         st.write("Archivo PDF subido exitosamente.")
-        file_content = "Contenido del archivo PDF"  # Placeholder para PDF
-        # Aquí iría el código para procesar el PDF, si es necesario
+        pdf_reader = PdfReader(io.BytesIO(uploaded_file.getvalue()))
+        file_content = ""
+        for page in pdf_reader.pages:
+            file_content += page.extract_text() + "\n"
+        st.write("Primeras líneas del PDF:")
+        st.write(file_content[:500])  # Mostrar los primeros 500 caracteres
+
+    # Guardar el contenido del archivo en la sesión
+    st.session_state.file_content = file_content
 
     # Área para preguntas sobre el archivo
     st.header("Preguntas sobre el Archivo")
@@ -92,13 +101,16 @@ if uploaded_file is not None:
     file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
     if st.button("Enviar Pregunta sobre el Archivo"):
         if file_question:
-            response = get_claude_response(file_question, context=file_content[:4000])
-            
-            # Agregar la nueva pregunta y respuesta al historial
-            st.session_state.file_chat_history.append((file_question, response))
-            
-            # Mostrar la nueva respuesta
-            st.text_area("Respuesta:", value=response, height=200, disabled=True)
+            if 'file_content' in st.session_state:
+                response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
+                
+                # Agregar la nueva pregunta y respuesta al historial
+                st.session_state.file_chat_history.append((file_question, response))
+                
+                # Mostrar la nueva respuesta
+                st.text_area("Respuesta:", value=response, height=200, disabled=True)
+            else:
+                st.error("Por favor, suba un archivo antes de hacer preguntas sobre él.")
             
             # Limpiar el campo de entrada
             st.rerun()
