@@ -18,6 +18,25 @@ if 'chat_history' not in st.session_state:
 if 'file_chat_history' not in st.session_state:
     st.session_state.file_chat_history = []
 
+def get_claude_response(prompt, context=""):
+    system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
+                     "Proporciona respuestas detalladas y precisas basadas en la información disponible. "
+                     "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
+                     "Evita especulaciones y céntrate en hechos verificables.")
+    
+    full_prompt = f"{system_prompt}\n\nContexto: {context}\n\nPregunta del usuario: {prompt}"
+    
+    message = client.messages.create(
+        model="claude-3-sonnet-20240229",
+        max_tokens=2000,
+        temperature=0.2,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": full_prompt}
+        ]
+    )
+    return message.content[0].text
+
 # Área de preguntas generales
 st.header("Preguntas Generales")
 
@@ -31,15 +50,7 @@ for q, a in st.session_state.chat_history:
 user_question = st.text_input("Haga su nueva pregunta aquí:")
 if st.button("Enviar Pregunta"):
     if user_question:
-        # Enviar la pregunta a Claude y obtener la respuesta
-        message = client.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=1000,
-            messages=[
-                {"role": "user", "content": user_question}
-            ]
-        )
-        response = message.content[0].text
+        response = get_claude_response(user_question)
         
         # Agregar la nueva pregunta y respuesta al historial
         st.session_state.chat_history.append((user_question, response))
@@ -81,16 +92,7 @@ if uploaded_file is not None:
     file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
     if st.button("Enviar Pregunta sobre el Archivo"):
         if file_question:
-            # Procesar la pregunta con Claude, incluyendo el contexto del archivo
-            prompt = f"Contexto del archivo:\n{file_content[:2000]}\n\nPregunta: {file_question}"
-            message = client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=1000,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            response = message.content[0].text
+            response = get_claude_response(file_question, context=file_content[:4000])
             
             # Agregar la nueva pregunta y respuesta al historial
             st.session_state.file_chat_history.append((file_question, response))
