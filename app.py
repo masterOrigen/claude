@@ -97,7 +97,6 @@ with tab2:
             st.session_state.file_content = file_content
             st.session_state.file_uploaded = True
             st.success("Archivo PDF subido exitosamente.")
-            st.write(f"Contenido del PDF (primeros 500 caracteres): {st.session_state.file_content[:500]}")
         except Exception as e:
             st.error(f"Error al leer el archivo PDF: {str(e)}")
             st.error(f"Traceback: {traceback.format_exc()}")
@@ -120,8 +119,3 @@ with tab2:
 
     else:
         st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
-
-# Depuración: mostrar el contenido del archivo PDF
-if st.session_state.file_uploaded:
-    st.write("Contenido del archivo PDF guardado:")
-    st.write(st.session_state.file_content[:1000])  # Mostrar los primeros 1000 caracteres
