@@ -30,7 +30,7 @@ def get_claude_response(prompt, context=""):
     
     message = client.messages.create(
         model="claude-3-sonnet-20240229",
-        max_tokens=8000,
+        max_tokens=4096,
         temperature=0,
         system=system_prompt,
         messages=[
