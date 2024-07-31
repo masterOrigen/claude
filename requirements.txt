@@ -3,3 +3,4 @@ pandas
 anthropic
 python-dotenv
 pydantic
+PyPDF2
