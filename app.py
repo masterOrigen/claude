@@ -26,12 +26,10 @@ if 'file_chat_history' not in st.session_state:
     st.session_state.file_chat_history = []
 if 'conversation_context' not in st.session_state:
     st.session_state.conversation_context = ""
-if 'user_question' not in st.session_state:
-    st.session_state.user_question = ""
-if 'file_question' not in st.session_state:
-    st.session_state.file_question = ""
 if 'file_content' not in st.session_state:
     st.session_state.file_content = ""
+if 'file_uploaded' not in st.session_state:
+    st.session_state.file_uploaded = False
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -61,44 +59,21 @@ def get_claude_response(prompt, context=""):
         return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
 def on_general_question_submit():
-    try:
-        if st.session_state.user_question:
-            response = get_claude_response(st.session_state.user_question, context=st.session_state.conversation_context)
-            
-            # Actualizar el contexto de la conversación
-            st.session_state.conversation_context += f"\nPregunta: {st.session_state.user_question}\nRespuesta: {response}\n"
-            
-            # Agregar la nueva pregunta y respuesta al historial
-            st.session_state.chat_history.append((st.session_state.user_question, response))
-            
-            # Limpiar el campo de entrada
-            st.session_state.user_question = ""
-    except Exception as e:
-        st.error(f"Error al procesar la pregunta general: {str(e)}")
-        st.error(f"Traceback: {traceback.format_exc()}")
+    user_question = st.session_state.user_question
+    if user_question:
+        response = get_claude_response(user_question, context=st.session_state.conversation_context)
+        st.session_state.conversation_context += f"\nPregunta: {user_question}\nRespuesta: {response}\n"
+        st.session_state.chat_history.append((user_question, response))
 
 def on_file_question_submit():
-    try:
-        if st.session_state.file_question and st.session_state.file_content:
-            response = get_claude_response(st.session_state.file_question, context=st.session_state.file_content[:4000])
-            
-            # Agregar la nueva pregunta y respuesta al historial
-            st.session_state.file_chat_history.append((st.session_state.file_question, response))
-            
-            # Mostrar la respuesta inmediatamente
-            st.subheader("Respuesta:")
-            st.write(response)
-            
-            # Limpiar el campo de entrada
-            st.session_state.file_question = ""
-    except Exception as e:
-        st.error(f"Error al procesar la pregunta sobre el archivo: {str(e)}")
-        st.error(f"Traceback: {traceback.format_exc()}")
+    file_question = st.session_state.file_question
+    if file_question and st.session_state.file_content:
+        response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
+        st.session_state.file_chat_history.append((file_question, response))
 
 # Área de preguntas generales
 st.header("Preguntas Generales")
 
-# Mostrar el historial de chat general
 for q, a in st.session_state.chat_history:
     st.subheader("Pregunta:")
     st.write(q)
@@ -106,16 +81,13 @@ for q, a in st.session_state.chat_history:
     st.write(a)
     st.markdown("---")
 
-# Área para nueva pregunta general
 st.text_area("Haga su nueva pregunta aquí:", key="user_question", height=100)
-if st.button("Enviar Pregunta", key="general_submit"):
-    on_general_question_submit()
+st.button("Enviar Pregunta", key="general_submit", on_click=on_general_question_submit)
 
 # Subida de archivos
 st.header("Subir Archivo")
 uploaded_file = st.file_uploader("Elija un archivo", type=["csv", "txt", "pdf"])
-if uploaded_file is not None:
-    # Leer el archivo
+if uploaded_file is not None and not st.session_state.file_uploaded:
     try:
         if uploaded_file.type == "text/csv":
             df = pd.read_csv(uploaded_file)
@@ -128,18 +100,17 @@ if uploaded_file is not None:
             for page in pdf_reader.pages:
                 file_content += page.extract_text() + "\n"
 
-        # Guardar el contenido del archivo en la sesión
         st.session_state.file_content = file_content
+        st.session_state.file_uploaded = True
         st.success("Archivo subido exitosamente.")
     except Exception as e:
         st.error(f"Error al leer el archivo: {str(e)}")
         st.error(f"Traceback: {traceback.format_exc()}")
 
 # Área para preguntas sobre el archivo
-if st.session_state.file_content:
+if st.session_state.file_uploaded:
     st.header("Preguntas sobre el Archivo")
 
-    # Mostrar el historial de preguntas sobre el archivo
     for q, a in st.session_state.file_chat_history:
         st.subheader("Pregunta sobre el archivo:")
         st.write(q)
@@ -148,7 +119,6 @@ if st.session_state.file_content:
         st.markdown("---")
 
     st.text_area("Haga una nueva pregunta sobre el archivo:", key="file_question", height=100)
-    if st.button("Enviar Pregunta sobre el Archivo", key="file_submit"):
-        on_file_question_submit()
+    st.button("Enviar Pregunta sobre el Archivo", key="file_submit", on_click=on_file_question_submit)
 else:
     st.info("Por favor, suba un archivo para hacer preguntas sobre él.")
