@@ -14,11 +14,15 @@ client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 st.title("Aplicación de Preguntas y Respuestas con Claude 3.5 Sonnet")
 
-# Inicializar los historiales de chat en la sesión si no existen
+# Inicializar los historiales de chat y estados en la sesión si no existen
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'file_chat_history' not in st.session_state:
     st.session_state.file_chat_history = []
+if 'show_response' not in st.session_state:
+    st.session_state.show_response = False
+if 'last_response' not in st.session_state:
+    st.session_state.last_response = ""
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -55,6 +59,11 @@ for q, a in st.session_state.chat_history:
     st.text_area("Respuesta:", value=a, height=200, disabled=True)
     st.markdown("---")
 
+# Mostrar la última respuesta si existe
+if st.session_state.show_response:
+    st.text_area("Última respuesta:", value=st.session_state.last_response, height=200, disabled=True)
+    st.session_state.show_response = False
+
 # Área para nueva pregunta general
 user_question = st.text_input("Haga su nueva pregunta aquí:")
 if st.button("Enviar Pregunta"):
@@ -64,8 +73,12 @@ if st.button("Enviar Pregunta"):
         # Agregar la nueva pregunta y respuesta al historial
         st.session_state.chat_history.append((user_question, response))
         
+        # Guardar la última respuesta y activar su visualización
+        st.session_state.last_response = response
+        st.session_state.show_response = True
+        
         # Limpiar el campo de entrada
-        st.rerun()
+        st.session_state.user_question = ""
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -99,6 +112,11 @@ if uploaded_file is not None:
         st.text_area("Respuesta:", value=a, height=200, disabled=True)
         st.markdown("---")
 
+    # Mostrar la última respuesta si existe
+    if st.session_state.show_response:
+        st.text_area("Última respuesta:", value=st.session_state.last_response, height=200, disabled=True)
+        st.session_state.show_response = False
+
     file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
     if st.button("Enviar Pregunta sobre el Archivo"):
         if file_question:
@@ -109,8 +127,12 @@ if uploaded_file is not None:
                     # Agregar la nueva pregunta y respuesta al historial
                     st.session_state.file_chat_history.append((file_question, response))
                     
+                    # Guardar la última respuesta y activar su visualización
+                    st.session_state.last_response = response
+                    st.session_state.show_response = True
+                    
                     # Limpiar el campo de entrada
-                    st.rerun()
+                    st.session_state.file_question = ""
                 except Exception as e:
                     st.error(f"Error al procesar la pregunta: {str(e)}")
             else:
