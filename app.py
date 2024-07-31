@@ -80,8 +80,10 @@ st.header("Preguntas Generales")
 
 # Mostrar el historial de chat general
 for q, a in st.session_state.chat_history:
-    st.text_area("Pregunta:", value=q, height=100, disabled=True)
-    st.text_area("Respuesta:", value=a, height=200, disabled=True)
+    st.subheader("Pregunta:")
+    st.write(q)
+    st.subheader("Respuesta:")
+    st.write(a)
     st.markdown("---")
 
 # Área para nueva pregunta general
@@ -116,8 +118,10 @@ if uploaded_file is not None:
 
     # Mostrar el historial de preguntas sobre el archivo
     for q, a in st.session_state.file_chat_history:
-        st.text_area("Pregunta sobre el archivo:", value=q, height=100, disabled=True)
-        st.text_area("Respuesta:", value=a, height=200, disabled=True)
+        st.subheader("Pregunta sobre el archivo:")
+        st.write(q)
+        st.subheader("Respuesta:")
+        st.write(a)
         st.markdown("---")
 
     st.text_input("Haga una nueva pregunta sobre el archivo:", key="file_question", on_change=on_file_question_submit)
