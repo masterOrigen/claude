@@ -47,7 +47,7 @@ def get_claude_response(prompt, is_general=True, context=""):
     try:
         message = client.messages.create(
             model="claude-3-sonnet-20240229",
-            max_tokens=12000,  # Máximo permitido por Claude 3.5 Sonnet
+            max_tokens=4090,  # Máximo permitido por Claude 3.5 Sonnet
             temperature=0,  # Temperatura 0 para máxima precisión
             system=system_prompt,
             messages=[
