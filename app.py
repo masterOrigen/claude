@@ -28,13 +28,19 @@ if 'file_content' not in st.session_state:
 if 'file_uploaded' not in st.session_state:
     st.session_state.file_uploaded = False
 
-def get_claude_response(prompt, context=""):
-    system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
-                     "Proporciona respuestas detalladas y precisas basadas en la información disponible. "
-                     "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
-                     "Evita especulaciones y céntrate en hechos verificables.")
-    
-    full_prompt = f"Contexto del archivo PDF:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo PDF proporcionado."
+def get_claude_response(prompt, is_general=True, context=""):
+    if is_general:
+        system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
+                         "Proporciona respuestas detalladas y precisas basadas en tu conocimiento general. "
+                         "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
+                         "Evita especulaciones y céntrate en hechos verificables.")
+        full_prompt = prompt
+    else:
+        system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
+                         "Proporciona respuestas detalladas y precisas basadas en la información disponible en el archivo PDF. "
+                         "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
+                         "Evita especulaciones y céntrate en hechos verificables del documento proporcionado.")
+        full_prompt = f"Contexto del archivo PDF:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo PDF proporcionado."
     
     try:
         message = client.messages.create(
@@ -54,14 +60,14 @@ def get_claude_response(prompt, context=""):
 
 def on_general_question_submit():
     if st.session_state.user_question:
-        response = get_claude_response(st.session_state.user_question)
+        response = get_claude_response(st.session_state.user_question, is_general=True)
         st.session_state.chat_history.append((st.session_state.user_question, response))
         st.session_state.user_question = ""
 
 def on_file_question_submit():
     if st.session_state.file_question and st.session_state.file_content:
         context = st.session_state.file_content[:4000]  # Limitamos a 4000 caracteres para evitar exceder los límites de tokens
-        response = get_claude_response(st.session_state.file_question, context=context)
+        response = get_claude_response(st.session_state.file_question, is_general=False, context=context)
         st.session_state.file_chat_history.append((st.session_state.file_question, response))
 
 # Crear pestañas
