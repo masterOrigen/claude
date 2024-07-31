@@ -30,7 +30,7 @@ def get_claude_response(prompt, context=""):
     
     message = client.messages.create(
         model="claude-3-sonnet-20240229",
-        max_tokens=4096,
+        max_tokens=8000,
         temperature=0,
         system=system_prompt,
         messages=[
@@ -41,14 +41,6 @@ def get_claude_response(prompt, context=""):
 
 # Área de preguntas generales
 st.header("Preguntas Generales")
-
-# Mostrar el historial de chat general
-for q, a in st.session_state.chat_history:
-    st.subheader("Pregunta:")
-    st.write(q)
-    st.subheader("Respuesta:")
-    st.write(a)
-    st.markdown("---")
 
 # Área para nueva pregunta general
 user_question = st.text_input("Haga su nueva pregunta aquí:")
@@ -62,9 +54,14 @@ if st.button("Enviar Pregunta"):
         # Mostrar la nueva respuesta
         st.subheader("Respuesta:")
         st.write(response)
-        
-        # Limpiar el campo de entrada
-        st.rerun()
+
+# Mostrar el historial de chat general
+for q, a in st.session_state.chat_history:
+    st.subheader("Pregunta:")
+    st.write(q)
+    st.subheader("Respuesta:")
+    st.write(a)
+    st.markdown("---")
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -73,35 +70,21 @@ if uploaded_file is not None:
     # Leer el archivo
     if uploaded_file.type == "text/csv":
         df = pd.read_csv(uploaded_file)
-        st.write("Archivo CSV subido exitosamente. Primeras filas:")
-        st.write(df.head())
         file_content = df.to_string()
     elif uploaded_file.type == "text/plain":
         file_content = uploaded_file.getvalue().decode("utf-8")
-        st.write("Archivo de texto subido exitosamente. Primeras líneas:")
-        st.write(file_content[:500])  # Mostrar los primeros 500 caracteres
     elif uploaded_file.type == "application/pdf":
-        st.write("Archivo PDF subido exitosamente.")
         pdf_reader = PdfReader(io.BytesIO(uploaded_file.getvalue()))
         file_content = ""
         for page in pdf_reader.pages:
             file_content += page.extract_text() + "\n"
-        st.write("Primeras líneas del PDF:")
-        st.write(file_content[:500])  # Mostrar los primeros 500 caracteres
 
     # Guardar el contenido del archivo en la sesión
     st.session_state.file_content = file_content
+    st.success("Archivo subido exitosamente.")
 
     # Área para preguntas sobre el archivo
     st.header("Preguntas sobre el Archivo")
-
-    # Mostrar el historial de preguntas sobre el archivo
-    for q, a in st.session_state.file_chat_history:
-        st.subheader("Pregunta sobre el archivo:")
-        st.write(q)
-        st.subheader("Respuesta:")
-        st.write(a)
-        st.markdown("---")
 
     file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
     if st.button("Enviar Pregunta sobre el Archivo"):
@@ -117,6 +100,11 @@ if uploaded_file is not None:
                 st.write(response)
             else:
                 st.error("Por favor, suba un archivo antes de hacer preguntas sobre él.")
-            
-            # Limpiar el campo de entrada
-            st.rerun()
+
+    # Mostrar el historial de preguntas sobre el archivo
+    for q, a in st.session_state.file_chat_history:
+        st.subheader("Pregunta sobre el archivo:")
+        st.write(q)
+        st.subheader("Respuesta:")
+        st.write(a)
+        st.markdown("---")
