@@ -1,6 +1,5 @@
 import streamlit as st
 import anthropic
-import pandas as pd
 from dotenv import load_dotenv
 import os
 from PyPDF2 import PdfReader
@@ -24,14 +23,10 @@ if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'file_chat_history' not in st.session_state:
     st.session_state.file_chat_history = []
-if 'conversation_context' not in st.session_state:
-    st.session_state.conversation_context = ""
 if 'file_content' not in st.session_state:
     st.session_state.file_content = ""
 if 'file_uploaded' not in st.session_state:
     st.session_state.file_uploaded = False
-if 'new_file_response' not in st.session_state:
-    st.session_state.new_file_response = None
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -39,7 +34,7 @@ def get_claude_response(prompt, context=""):
                      "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
                      "Evita especulaciones y céntrate en hechos verificables.")
     
-    full_prompt = f"Contexto del archivo PDF:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo PDF proporcionado."
+    full_prompt = f"{context}\n\nPregunta del usuario: {prompt}"
     
     try:
         message = client.messages.create(
@@ -52,27 +47,25 @@ def get_claude_response(prompt, context=""):
             ]
         )
         return message.content[0].text
-    except anthropic.APIError as e:
-        st.error(f"Error en la API de Anthropic: {str(e)}")
-        return "Lo siento, ha ocurrido un error al procesar tu pregunta. Por favor, inténtalo de nuevo más tarde."
     except Exception as e:
-        st.error(f"Error inesperado: {str(e)}")
+        st.error(f"Error al procesar la pregunta: {str(e)}")
         st.error(f"Traceback: {traceback.format_exc()}")
         return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
 def on_general_question_submit():
     user_question = st.session_state.user_question
     if user_question:
-        response = get_claude_response(user_question, context=st.session_state.conversation_context)
-        st.session_state.conversation_context += f"\nPregunta: {user_question}\nRespuesta: {response}\n"
+        response = get_claude_response(user_question)
         st.session_state.chat_history.append((user_question, response))
+        st.session_state.user_question = ""  # Limpiar el campo de entrada
 
 def on_file_question_submit():
     file_question = st.session_state.file_question
     if file_question and st.session_state.file_content:
-        response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
+        context = f"Contexto del archivo PDF:\n\n{st.session_state.file_content[:4000]}\n\n"
+        response = get_claude_response(file_question, context=context)
         st.session_state.file_chat_history.append((file_question, response))
-        st.session_state.new_file_response = response
+        st.session_state.file_question = ""  # Limpiar el campo de entrada
 
 # Crear pestañas
 tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
@@ -80,6 +73,7 @@ tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
 with tab1:
     st.header("Preguntas Generales")
 
+    # Mostrar el historial de chat general
     for q, a in st.session_state.chat_history:
         st.subheader("Pregunta:")
         st.write(q)
@@ -87,8 +81,11 @@ with tab1:
         st.write(a)
         st.markdown("---")
 
+    # Área para nueva pregunta general
     st.text_area("Haga su nueva pregunta aquí:", key="user_question", height=100)
-    st.button("Enviar Pregunta", key="general_submit", on_click=on_general_question_submit)
+    if st.button("Enviar Pregunta", key="general_submit"):
+        on_general_question_submit()
+        st.rerun()
 
 with tab2:
     st.header("Chat con PDF")
@@ -105,27 +102,24 @@ with tab2:
             st.session_state.file_content = file_content
             st.session_state.file_uploaded = True
             st.success("Archivo PDF subido exitosamente.")
-            st.write("Primeras 500 caracteres del archivo:")
-            st.text(st.session_state.file_content[:500])
         except Exception as e:
             st.error(f"Error al leer el archivo PDF: {str(e)}")
             st.error(f"Traceback: {traceback.format_exc()}")
 
     # Área para preguntas sobre el archivo
     if st.session_state.file_uploaded:
-        st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
-        st.button("Enviar Pregunta sobre el PDF", key="file_submit", on_click=on_file_question_submit)
-
-        if st.session_state.new_file_response:
-            st.subheader("Nueva respuesta:")
-            st.write(st.session_state.new_file_response)
-            st.session_state.new_file_response = None
-
+        # Mostrar el historial de chat del archivo
         for q, a in st.session_state.file_chat_history:
             st.subheader("Pregunta sobre el archivo:")
             st.write(q)
             st.subheader("Respuesta:")
             st.write(a)
             st.markdown("---")
+
+        # Área para nueva pregunta sobre el archivo
+        st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
+        if st.button("Enviar Pregunta sobre el PDF", key="file_submit"):
+            on_file_question_submit()
+            st.rerun()
     else:
         st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
