@@ -69,6 +69,7 @@ def on_file_question_submit():
         context = st.session_state.file_content[:4000]  # Limitamos a 4000 caracteres para evitar exceder los límites de tokens
         response = get_claude_response(st.session_state.file_question, is_general=False, context=context)
         st.session_state.file_chat_history.append((st.session_state.file_question, response))
+        st.rerun()
 
 # Crear pestañas
 tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
@@ -121,7 +122,6 @@ with tab2:
         st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
         if st.button("Enviar Pregunta sobre el PDF", key="file_submit"):
             on_file_question_submit()
-            st.rerun()
 
     else:
         st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
