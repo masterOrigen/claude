@@ -19,14 +19,10 @@ if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'file_chat_history' not in st.session_state:
     st.session_state.file_chat_history = []
-if 'show_general_response' not in st.session_state:
-    st.session_state.show_general_response = False
-if 'show_file_response' not in st.session_state:
-    st.session_state.show_file_response = False
-if 'last_general_response' not in st.session_state:
-    st.session_state.last_general_response = ""
-if 'last_file_response' not in st.session_state:
-    st.session_state.last_file_response = ""
+if 'user_question' not in st.session_state:
+    st.session_state.user_question = ""
+if 'file_question' not in st.session_state:
+    st.session_state.file_question = ""
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -54,35 +50,30 @@ def get_claude_response(prompt, context=""):
         st.error(f"Error inesperado: {str(e)}")
         return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
+def on_general_question_submit():
+    if st.session_state.user_question:
+        response = get_claude_response(st.session_state.user_question)
+        st.session_state.chat_history.append((st.session_state.user_question, response))
+        st.session_state.user_question = ""
+
+def on_file_question_submit():
+    if st.session_state.file_question and 'file_content' in st.session_state:
+        response = get_claude_response(st.session_state.file_question, context=st.session_state.file_content[:4000])
+        st.session_state.file_chat_history.append((st.session_state.file_question, response))
+        st.session_state.file_question = ""
+
 # Área de preguntas generales
 st.header("Preguntas Generales")
 
 # Mostrar el historial de chat general
-for q, a in st.session_state.chat_history:
-    st.text_area("Pregunta:", value=q, height=100, disabled=True)
-    st.text_area("Respuesta:", value=a, height=200, disabled=True)
+for i, (q, a) in enumerate(st.session_state.chat_history):
+    st.text_area(f"Pregunta {i+1}:", value=q, height=100, disabled=True, key=f"gen_q_{i}")
+    st.text_area(f"Respuesta {i+1}:", value=a, height=200, disabled=True, key=f"gen_a_{i}")
     st.markdown("---")
 
-# Mostrar la última respuesta general si existe
-if st.session_state.show_general_response:
-    st.text_area("Última respuesta:", value=st.session_state.last_general_response, height=200, disabled=True)
-    st.session_state.show_general_response = False
-
 # Área para nueva pregunta general
-user_question = st.text_input("Haga su nueva pregunta aquí:")
-if st.button("Enviar Pregunta"):
-    if user_question:
-        response = get_claude_response(user_question)
-        
-        # Agregar la nueva pregunta y respuesta al historial
-        st.session_state.chat_history.append((user_question, response))
-        
-        # Guardar la última respuesta general y activar su visualización
-        st.session_state.last_general_response = response
-        st.session_state.show_general_response = True
-        
-        # Limpiar el campo de entrada
-        st.session_state.user_question = ""
+st.text_input("Haga su nueva pregunta aquí:", key="general_question", on_change=on_general_question_submit, value=st.session_state.user_question)
+st.button("Enviar Pregunta", on_click=on_general_question_submit, key="general_submit")
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -111,33 +102,10 @@ if uploaded_file is not None:
     st.header("Preguntas sobre el Archivo")
 
     # Mostrar el historial de preguntas sobre el archivo
-    for q, a in st.session_state.file_chat_history:
-        st.text_area("Pregunta sobre el archivo:", value=q, height=100, disabled=True)
-        st.text_area("Respuesta:", value=a, height=200, disabled=True)
+    for i, (q, a) in enumerate(st.session_state.file_chat_history):
+        st.text_area(f"Pregunta sobre el archivo {i+1}:", value=q, height=100, disabled=True, key=f"file_q_{i}")
+        st.text_area(f"Respuesta {i+1}:", value=a, height=200, disabled=True, key=f"file_a_{i}")
         st.markdown("---")
 
-    # Mostrar la última respuesta sobre el archivo si existe
-    if st.session_state.show_file_response:
-        st.text_area("Última respuesta sobre el archivo:", value=st.session_state.last_file_response, height=200, disabled=True)
-        st.session_state.show_file_response = False
-
-    file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
-    if st.button("Enviar Pregunta sobre el Archivo"):
-        if file_question:
-            if 'file_content' in st.session_state:
-                try:
-                    response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
-                    
-                    # Agregar la nueva pregunta y respuesta al historial
-                    st.session_state.file_chat_history.append((file_question, response))
-                    
-                    # Guardar la última respuesta sobre el archivo y activar su visualización
-                    st.session_state.last_file_response = response
-                    st.session_state.show_file_response = True
-                    
-                    # Limpiar el campo de entrada
-                    st.session_state.file_question = ""
-                except Exception as e:
-                    st.error(f"Error al procesar la pregunta: {str(e)}")
-            else:
-                st.error("Por favor, suba un archivo antes de hacer preguntas sobre él.")
+    st.text_input("Haga una nueva pregunta sobre el archivo:", key="file_question", on_change=on_file_question_submit, value=st.session_state.file_question)
+    st.button("Enviar Pregunta sobre el Archivo", on_click=on_file_question_submit, key="file_submit")
