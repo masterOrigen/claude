@@ -53,19 +53,17 @@ def get_claude_response(prompt, context=""):
         return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
 def on_general_question_submit():
-    user_question = st.session_state.user_question
-    if user_question:
-        response = get_claude_response(user_question)
-        st.session_state.chat_history.append((user_question, response))
-        st.session_state.user_question = ""  # Limpiar el campo de entrada
+    if st.session_state.user_question:
+        response = get_claude_response(st.session_state.user_question)
+        st.session_state.chat_history.append((st.session_state.user_question, response))
+        st.session_state.user_question = ""  # Esto limpiará el campo de entrada
 
 def on_file_question_submit():
-    file_question = st.session_state.file_question
-    if file_question and st.session_state.file_content:
+    if st.session_state.file_question and st.session_state.file_content:
         context = f"Contexto del archivo PDF:\n\n{st.session_state.file_content[:4000]}\n\n"
-        response = get_claude_response(file_question, context=context)
-        st.session_state.file_chat_history.append((file_question, response))
-        st.session_state.file_question = ""  # Limpiar el campo de entrada
+        response = get_claude_response(st.session_state.file_question, context=context)
+        st.session_state.file_chat_history.append((st.session_state.file_question, response))
+        st.session_state.file_question = ""  # Esto limpiará el campo de entrada
 
 # Crear pestañas
 tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
@@ -83,9 +81,7 @@ with tab1:
 
     # Área para nueva pregunta general
     st.text_area("Haga su nueva pregunta aquí:", key="user_question", height=100)
-    if st.button("Enviar Pregunta", key="general_submit"):
-        on_general_question_submit()
-        st.rerun()
+    st.button("Enviar Pregunta", key="general_submit", on_click=on_general_question_submit)
 
 with tab2:
     st.header("Chat con PDF")
@@ -118,8 +114,6 @@ with tab2:
 
         # Área para nueva pregunta sobre el archivo
         st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
-        if st.button("Enviar Pregunta sobre el PDF", key="file_submit"):
-            on_file_question_submit()
-            st.rerun()
+        st.button("Enviar Pregunta sobre el PDF", key="file_submit", on_click=on_file_question_submit)
     else:
         st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
