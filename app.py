@@ -27,6 +27,8 @@ if 'file_content' not in st.session_state:
     st.session_state.file_content = ""
 if 'file_uploaded' not in st.session_state:
     st.session_state.file_uploaded = False
+if 'last_file_question' not in st.session_state:
+    st.session_state.last_file_question = ""
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -34,7 +36,7 @@ def get_claude_response(prompt, context=""):
                      "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
                      "Evita especulaciones y céntrate en hechos verificables.")
     
-    full_prompt = f"{context}\n\nPregunta del usuario: {prompt}"
+    full_prompt = f"Contexto del archivo PDF:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo PDF proporcionado."
     
     try:
         message = client.messages.create(
@@ -53,18 +55,18 @@ def get_claude_response(prompt, context=""):
         return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo o contacta al soporte técnico."
 
 def on_general_question_submit():
-    user_question = st.session_state.user_question
-    if user_question:
-        response = get_claude_response(user_question)
-        st.session_state.chat_history.append((user_question, response))
+    if st.session_state.user_question:
+        response = get_claude_response(st.session_state.user_question)
+        st.session_state.chat_history.append((st.session_state.user_question, response))
         st.session_state.user_question = ""
 
 def on_file_question_submit():
-    file_question = st.session_state.file_question
-    if file_question and st.session_state.file_content:
-        context = f"Contexto del archivo PDF:\n\n{st.session_state.file_content[:4000]}\n\n"
-        response = get_claude_response(file_question, context=context)
-        st.session_state.file_chat_history.append((file_question, response))
+    if st.session_state.file_question and st.session_state.file_content:
+        context = st.session_state.file_content[:4000]  # Limitamos a 4000 caracteres para evitar exceder los límites de tokens
+        response = get_claude_response(st.session_state.file_question, context=context)
+        st.session_state.file_chat_history.append((st.session_state.file_question, response))
+        st.session_state.last_file_question = st.session_state.file_question
+        st.session_state.file_question = ""
 
 # Crear pestañas
 tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
@@ -89,7 +91,7 @@ with tab2:
 
     # Subida de archivos
     uploaded_file = st.file_uploader("Elija un archivo PDF", type=["pdf"])
-    if uploaded_file is not None and not st.session_state.file_uploaded:
+    if uploaded_file is not None:
         try:
             pdf_reader = PdfReader(io.BytesIO(uploaded_file.getvalue()))
             file_content = ""
@@ -99,6 +101,7 @@ with tab2:
             st.session_state.file_content = file_content
             st.session_state.file_uploaded = True
             st.success("Archivo PDF subido exitosamente.")
+            st.write(f"Contenido del PDF (primeros 500 caracteres): {st.session_state.file_content[:500]}")
         except Exception as e:
             st.error(f"Error al leer el archivo PDF: {str(e)}")
             st.error(f"Traceback: {traceback.format_exc()}")
@@ -114,10 +117,15 @@ with tab2:
             st.markdown("---")
 
         # Área para nueva pregunta sobre el archivo
-        st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
+        file_question = st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
         if st.button("Enviar Pregunta sobre el PDF", key="file_submit"):
+            st.session_state.file_question = file_question
             on_file_question_submit()
-            st.rerun()
 
     else:
         st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
+
+# Depuración: mostrar el contenido del archivo PDF
+if st.session_state.file_uploaded:
+    st.write("Contenido del archivo PDF guardado:")
+    st.write(st.session_state.file_content[:1000])  # Mostrar los primeros 1000 caracteres
