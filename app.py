@@ -16,7 +16,7 @@ except Exception as e:
     st.error(f"Error al inicializar el cliente de Anthropic: {str(e)}")
     st.stop()
 
-st.title("Aplicación de Preguntas y Respuestas con Claude 3.5 Sonnet")
+st.header("Claude Sonnet - GPT MEDIOS")
 
 # Inicializar los historiales de chat y estados en la sesión si no existen
 if 'chat_history' not in st.session_state:
