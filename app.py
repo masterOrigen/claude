@@ -31,22 +31,24 @@ if 'file_uploaded' not in st.session_state:
 def get_claude_response(prompt, is_general=True, context=""):
     if is_general:
         system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
-                         "Proporciona respuestas detalladas y precisas basadas en tu conocimiento general. "
+                         "Proporciona respuestas extremadamente detalladas, extensas y precisas basadas en tu conocimiento general. "
+                         "Utiliza todo el espacio disponible para ofrecer la respuesta más completa posible. "
                          "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
                          "Evita especulaciones y céntrate en hechos verificables.")
         full_prompt = prompt
     else:
         system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
-                         "Proporciona respuestas detalladas y precisas basadas en la información disponible en el archivo PDF. "
+                         "Proporciona respuestas extremadamente detalladas, extensas y precisas basadas en la información disponible en el archivo PDF. "
+                         "Utiliza todo el espacio disponible para ofrecer la respuesta más completa posible. "
                          "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
                          "Evita especulaciones y céntrate en hechos verificables del documento proporcionado.")
-        full_prompt = f"Contexto del archivo PDF:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo PDF proporcionado."
+        full_prompt = f"Contexto del archivo PDF:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo PDF proporcionado. Sé lo más detallado y extenso posible en tu respuesta."
     
     try:
         message = client.messages.create(
             model="claude-3-sonnet-20240229",
-            max_tokens=4096,
-            temperature=0,
+            max_tokens=12000,  # Máximo permitido por Claude 3.5 Sonnet
+            temperature=0,  # Temperatura 0 para máxima precisión
             system=system_prompt,
             messages=[
                 {"role": "user", "content": full_prompt}
@@ -66,7 +68,7 @@ def on_general_question_submit():
 
 def on_file_question_submit():
     if st.session_state.file_question and st.session_state.file_content:
-        context = st.session_state.file_content[:4000]  # Limitamos a 4000 caracteres para evitar exceder los límites de tokens
+        context = st.session_state.file_content  # Usamos todo el contenido del archivo
         response = get_claude_response(st.session_state.file_question, is_general=False, context=context)
         st.session_state.file_chat_history.append((st.session_state.file_question, response))
         st.rerun()
