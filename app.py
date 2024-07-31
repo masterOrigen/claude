@@ -30,7 +30,7 @@ def get_claude_response(prompt, context=""):
     
     message = client.messages.create(
         model="claude-3-sonnet-20240229",
-        max_tokens=2000,
+        max_tokens=4096,
         temperature=0,
         system=system_prompt,
         messages=[
@@ -44,8 +44,10 @@ st.header("Preguntas Generales")
 
 # Mostrar el historial de chat general
 for q, a in st.session_state.chat_history:
-    st.text_area("Pregunta:", value=q, height=100, disabled=True)
-    st.text_area("Respuesta:", value=a, height=200, disabled=True)
+    st.subheader("Pregunta:")
+    st.write(q)
+    st.subheader("Respuesta:")
+    st.write(a)
     st.markdown("---")
 
 # Área para nueva pregunta general
@@ -58,7 +60,8 @@ if st.button("Enviar Pregunta"):
         st.session_state.chat_history.append((user_question, response))
         
         # Mostrar la nueva respuesta
-        st.text_area("Respuesta:", value=response, height=200, disabled=True)
+        st.subheader("Respuesta:")
+        st.write(response)
         
         # Limpiar el campo de entrada
         st.rerun()
@@ -94,8 +97,10 @@ if uploaded_file is not None:
 
     # Mostrar el historial de preguntas sobre el archivo
     for q, a in st.session_state.file_chat_history:
-        st.text_area("Pregunta sobre el archivo:", value=q, height=100, disabled=True)
-        st.text_area("Respuesta:", value=a, height=200, disabled=True)
+        st.subheader("Pregunta sobre el archivo:")
+        st.write(q)
+        st.subheader("Respuesta:")
+        st.write(a)
         st.markdown("---")
 
     file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
@@ -108,7 +113,8 @@ if uploaded_file is not None:
                 st.session_state.file_chat_history.append((file_question, response))
                 
                 # Mostrar la nueva respuesta
-                st.text_area("Respuesta:", value=response, height=200, disabled=True)
+                st.subheader("Respuesta:")
+                st.write(response)
             else:
                 st.error("Por favor, suba un archivo antes de hacer preguntas sobre él.")
             
