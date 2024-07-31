@@ -87,8 +87,9 @@ for q, a in st.session_state.chat_history:
     st.markdown("---")
 
 # Área para nueva pregunta general
-st.text_input("Haga su nueva pregunta aquí:", key="user_question", on_change=on_general_question_submit)
-st.button("Enviar Pregunta", on_click=on_general_question_submit)
+st.text_area("Haga su nueva pregunta aquí:", key="user_question", height=100)
+if st.button("Enviar Pregunta", key="general_submit"):
+    on_general_question_submit()
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -124,5 +125,6 @@ if uploaded_file is not None:
         st.write(a)
         st.markdown("---")
 
-    st.text_input("Haga una nueva pregunta sobre el archivo:", key="file_question", on_change=on_file_question_submit)
-    st.button("Enviar Pregunta sobre el Archivo", on_click=on_file_question_submit)
+    st.text_area("Haga una nueva pregunta sobre el archivo:", key="file_question", height=100)
+    if st.button("Enviar Pregunta sobre el Archivo", key="file_submit"):
+        on_file_question_submit()
