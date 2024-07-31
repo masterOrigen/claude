@@ -7,8 +7,8 @@ import os
 # Cargar variables de entorno
 load_dotenv()
 
-# Configurar el cliente de Claude usando la API key del archivo .env
-client = anthropic.Client(api_key=os.getenv("ANTHROPIC_API_KEY"))
+# Configurar el cliente de Anthropic usando la API key del archivo .env
+client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 st.title("Aplicación de Preguntas y Respuestas con Claude 3.5 Sonnet")
 
@@ -18,12 +18,14 @@ user_question = st.text_input("Haga su pregunta aquí:")
 if st.button("Enviar Pregunta"):
     if user_question:
         # Enviar la pregunta a Claude y obtener la respuesta
-        response = client.complete(
-            prompt=user_question,
-            model="claude-3.5-sonnet",
-            max_tokens_to_sample=1000
+        message = client.messages.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": user_question}
+            ]
         )
-        st.write("Respuesta:", response.completion)
+        st.write("Respuesta:", message.content[0].text)
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -57,9 +59,11 @@ if uploaded_file is not None:
             
             # Procesar la pregunta con Claude, incluyendo el contexto del archivo
             prompt = f"Contexto del archivo:\n{context[:2000]}\n\nPregunta: {file_question}"
-            response = client.complete(
-                prompt=prompt,
-                model="claude-3.5-sonnet",
-                max_tokens_to_sample=1000
+            message = client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=1000,
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
             )
-            st.write("Respuesta:", response.completion)
+            st.write("Respuesta:", message.content[0].text)
