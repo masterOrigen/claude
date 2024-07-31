@@ -19,10 +19,14 @@ if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'file_chat_history' not in st.session_state:
     st.session_state.file_chat_history = []
-if 'show_response' not in st.session_state:
-    st.session_state.show_response = False
-if 'last_response' not in st.session_state:
-    st.session_state.last_response = ""
+if 'show_general_response' not in st.session_state:
+    st.session_state.show_general_response = False
+if 'show_file_response' not in st.session_state:
+    st.session_state.show_file_response = False
+if 'last_general_response' not in st.session_state:
+    st.session_state.last_general_response = ""
+if 'last_file_response' not in st.session_state:
+    st.session_state.last_file_response = ""
 
 def get_claude_response(prompt, context=""):
     system_prompt = ("Eres un asistente AI altamente preciso y confiable. "
@@ -59,10 +63,10 @@ for q, a in st.session_state.chat_history:
     st.text_area("Respuesta:", value=a, height=200, disabled=True)
     st.markdown("---")
 
-# Mostrar la última respuesta si existe
-if st.session_state.show_response:
-    st.text_area("Última respuesta:", value=st.session_state.last_response, height=200, disabled=True)
-    st.session_state.show_response = False
+# Mostrar la última respuesta general si existe
+if st.session_state.show_general_response:
+    st.text_area("Última respuesta:", value=st.session_state.last_general_response, height=200, disabled=True)
+    st.session_state.show_general_response = False
 
 # Área para nueva pregunta general
 user_question = st.text_input("Haga su nueva pregunta aquí:")
@@ -73,9 +77,9 @@ if st.button("Enviar Pregunta"):
         # Agregar la nueva pregunta y respuesta al historial
         st.session_state.chat_history.append((user_question, response))
         
-        # Guardar la última respuesta y activar su visualización
-        st.session_state.last_response = response
-        st.session_state.show_response = True
+        # Guardar la última respuesta general y activar su visualización
+        st.session_state.last_general_response = response
+        st.session_state.show_general_response = True
         
         # Limpiar el campo de entrada
         st.session_state.user_question = ""
@@ -112,10 +116,10 @@ if uploaded_file is not None:
         st.text_area("Respuesta:", value=a, height=200, disabled=True)
         st.markdown("---")
 
-    # Mostrar la última respuesta si existe
-    if st.session_state.show_response:
-        st.text_area("Última respuesta:", value=st.session_state.last_response, height=200, disabled=True)
-        st.session_state.show_response = False
+    # Mostrar la última respuesta sobre el archivo si existe
+    if st.session_state.show_file_response:
+        st.text_area("Última respuesta sobre el archivo:", value=st.session_state.last_file_response, height=200, disabled=True)
+        st.session_state.show_file_response = False
 
     file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
     if st.button("Enviar Pregunta sobre el Archivo"):
@@ -127,9 +131,9 @@ if uploaded_file is not None:
                     # Agregar la nueva pregunta y respuesta al historial
                     st.session_state.file_chat_history.append((file_question, response))
                     
-                    # Guardar la última respuesta y activar su visualización
-                    st.session_state.last_response = response
-                    st.session_state.show_response = True
+                    # Guardar la última respuesta sobre el archivo y activar su visualización
+                    st.session_state.last_file_response = response
+                    st.session_state.show_file_response = True
                     
                     # Limpiar el campo de entrada
                     st.session_state.file_question = ""
