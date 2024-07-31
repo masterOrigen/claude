@@ -49,6 +49,12 @@ def get_claude_response(prompt, context=""):
 # Área de preguntas generales
 st.header("Preguntas Generales")
 
+# Mostrar el historial de chat general
+for q, a in st.session_state.chat_history:
+    st.text_area("Pregunta:", value=q, height=100, disabled=True)
+    st.text_area("Respuesta:", value=a, height=200, disabled=True)
+    st.markdown("---")
+
 # Área para nueva pregunta general
 user_question = st.text_input("Haga su nueva pregunta aquí:")
 if st.button("Enviar Pregunta"):
@@ -58,17 +64,8 @@ if st.button("Enviar Pregunta"):
         # Agregar la nueva pregunta y respuesta al historial
         st.session_state.chat_history.append((user_question, response))
         
-        # Mostrar la nueva respuesta
-        st.subheader("Respuesta:")
-        st.write(response)
-
-# Mostrar el historial de chat general
-for q, a in st.session_state.chat_history:
-    st.subheader("Pregunta:")
-    st.write(q)
-    st.subheader("Respuesta:")
-    st.write(a)
-    st.markdown("---")
+        # Limpiar el campo de entrada
+        st.experimental_rerun()
 
 # Subida de archivos
 st.header("Subir Archivo")
@@ -96,6 +93,12 @@ if uploaded_file is not None:
     # Área para preguntas sobre el archivo
     st.header("Preguntas sobre el Archivo")
 
+    # Mostrar el historial de preguntas sobre el archivo
+    for q, a in st.session_state.file_chat_history:
+        st.text_area("Pregunta sobre el archivo:", value=q, height=100, disabled=True)
+        st.text_area("Respuesta:", value=a, height=200, disabled=True)
+        st.markdown("---")
+
     file_question = st.text_input("Haga una nueva pregunta sobre el archivo:")
     if st.button("Enviar Pregunta sobre el Archivo"):
         if file_question:
@@ -106,18 +109,9 @@ if uploaded_file is not None:
                     # Agregar la nueva pregunta y respuesta al historial
                     st.session_state.file_chat_history.append((file_question, response))
                     
-                    # Mostrar la nueva respuesta
-                    st.subheader("Respuesta:")
-                    st.write(response)
+                    # Limpiar el campo de entrada
+                    st.experimental_rerun()
                 except Exception as e:
                     st.error(f"Error al procesar la pregunta: {str(e)}")
             else:
                 st.error("Por favor, suba un archivo antes de hacer preguntas sobre él.")
-
-    # Mostrar el historial de preguntas sobre el archivo
-    for q, a in st.session_state.file_chat_history:
-        st.subheader("Pregunta sobre el archivo:")
-        st.write(q)
-        st.subheader("Respuesta:")
-        st.write(a)
-        st.markdown("---")
