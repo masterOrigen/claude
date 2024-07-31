@@ -37,7 +37,7 @@ def get_claude_response(prompt, context=""):
                      "Si no tienes suficiente información para responder con certeza, indícalo claramente. "
                      "Evita especulaciones y céntrate en hechos verificables.")
     
-    full_prompt = f"Contexto del archivo:\n\n{context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contenido del archivo proporcionado."
+    full_prompt = f"Contexto: {context}\n\nPregunta del usuario: {prompt}\n\nPor favor, responde a la pregunta basándote en el contexto proporcionado."
     
     try:
         message = client.messages.create(
@@ -71,56 +71,53 @@ def on_file_question_submit():
         response = get_claude_response(file_question, context=st.session_state.file_content[:4000])
         st.session_state.file_chat_history.append((file_question, response))
 
-# Área de preguntas generales
-st.header("Preguntas Generales")
+# Crear pestañas
+tab1, tab2 = st.tabs(["Chat General", "Chat con PDF"])
 
-for q, a in st.session_state.chat_history:
-    st.subheader("Pregunta:")
-    st.write(q)
-    st.subheader("Respuesta:")
-    st.write(a)
-    st.markdown("---")
+with tab1:
+    st.header("Preguntas Generales")
 
-st.text_area("Haga su nueva pregunta aquí:", key="user_question", height=100)
-st.button("Enviar Pregunta", key="general_submit", on_click=on_general_question_submit)
-
-# Subida de archivos
-st.header("Subir Archivo")
-uploaded_file = st.file_uploader("Elija un archivo", type=["csv", "txt", "pdf"])
-if uploaded_file is not None and not st.session_state.file_uploaded:
-    try:
-        if uploaded_file.type == "text/csv":
-            df = pd.read_csv(uploaded_file)
-            file_content = df.to_string()
-        elif uploaded_file.type == "text/plain":
-            file_content = uploaded_file.getvalue().decode("utf-8")
-        elif uploaded_file.type == "application/pdf":
-            pdf_reader = PdfReader(io.BytesIO(uploaded_file.getvalue()))
-            file_content = ""
-            for page in pdf_reader.pages:
-                file_content += page.extract_text() + "\n"
-
-        st.session_state.file_content = file_content
-        st.session_state.file_uploaded = True
-        st.success("Archivo subido exitosamente.")
-        st.write("Primeras 500 caracteres del archivo:")
-        st.text(st.session_state.file_content[:500])
-    except Exception as e:
-        st.error(f"Error al leer el archivo: {str(e)}")
-        st.error(f"Traceback: {traceback.format_exc()}")
-
-# Área para preguntas sobre el archivo
-if st.session_state.file_uploaded:
-    st.header("Preguntas sobre el Archivo")
-
-    for q, a in st.session_state.file_chat_history:
-        st.subheader("Pregunta sobre el archivo:")
+    for q, a in st.session_state.chat_history:
+        st.subheader("Pregunta:")
         st.write(q)
         st.subheader("Respuesta:")
         st.write(a)
         st.markdown("---")
 
-    st.text_area("Haga una nueva pregunta sobre el archivo:", key="file_question", height=100)
-    st.button("Enviar Pregunta sobre el Archivo", key="file_submit", on_click=on_file_question_submit)
-else:
-    st.info("Por favor, suba un archivo para hacer preguntas sobre él.")
+    st.text_area("Haga su nueva pregunta aquí:", key="user_question", height=100)
+    st.button("Enviar Pregunta", key="general_submit", on_click=on_general_question_submit)
+
+with tab2:
+    st.header("Chat con PDF")
+
+    # Subida de archivos
+    uploaded_file = st.file_uploader("Elija un archivo PDF", type=["pdf"])
+    if uploaded_file is not None and not st.session_state.file_uploaded:
+        try:
+            pdf_reader = PdfReader(io.BytesIO(uploaded_file.getvalue()))
+            file_content = ""
+            for page in pdf_reader.pages:
+                file_content += page.extract_text() + "\n"
+
+            st.session_state.file_content = file_content
+            st.session_state.file_uploaded = True
+            st.success("Archivo PDF subido exitosamente.")
+            st.write("Primeras 500 caracteres del archivo:")
+            st.text(st.session_state.file_content[:500])
+        except Exception as e:
+            st.error(f"Error al leer el archivo PDF: {str(e)}")
+            st.error(f"Traceback: {traceback.format_exc()}")
+
+    # Área para preguntas sobre el archivo
+    if st.session_state.file_uploaded:
+        for q, a in st.session_state.file_chat_history:
+            st.subheader("Pregunta sobre el archivo:")
+            st.write(q)
+            st.subheader("Respuesta:")
+            st.write(a)
+            st.markdown("---")
+
+        st.text_area("Haga una nueva pregunta sobre el archivo PDF:", key="file_question", height=100)
+        st.button("Enviar Pregunta sobre el PDF", key="file_submit", on_click=on_file_question_submit)
+    else:
+        st.info("Por favor, suba un archivo PDF para hacer preguntas sobre él.")
